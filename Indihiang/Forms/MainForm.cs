@@ -117,7 +117,79 @@ namespace Indihiang.Forms
 
             treeMain.Nodes.Add(_rootNode);
             treeMain.ExpandAll();
-        }      
+        }
+
+        void openLogFiles(string[] logFiles)
+        {
+            if (logFiles.Length > 1)
+            {
+                GenerateConsolidateName();
+                string key = "--"; //magic number
+                string name1 = "Consolidation #" + _consolidationId;
+
+                using (ConsolidateForm frm = new ConsolidateForm { ConsolidationName = name1 })
+                {
+                    name1 = "";
+
+                    while (String.Compare(name1, "", false) == 0)
+                    {
+                        if (frm.ShowDialog() != DialogResult.OK)
+                        {
+                            _consolidationId--;
+                            return;
+                        }
+
+                        if (!_logFileaNode.Nodes.ContainsKey(frm.ConsolidationName))
+                        {
+                            name1 = frm.ConsolidationName;
+
+                            if (!frm.ConsolidationName.Equals("Consolidation #" + _consolidationId))
+                                _consolidationId--;
+                        }
+                        else
+                            MessageBox.Show("Log Name cannot duplicate", "Information");
+
+                    }
+                }
+
+                Guid id = Guid.NewGuid();
+                TreeNode item = CreateNewNode(id.ToString(), name1, 7);
+
+                key = "--";
+                for (int i = 0; i < logFiles.Length; i++)
+                {
+                    key = String.Format("{0}{1};", key, logFiles[i]);
+                    string name2 = Path.GetFileName(logFiles[i]);
+                    TreeNode childItem = item.Nodes.Add(logFiles[i], name2);
+                    childItem.ImageIndex = 2;
+                    childItem.SelectedImageIndex = 2;
+                }
+
+
+                //AttachUserControl(key, name1,7);
+                AttachUserControl(id.ToString(), name1, 7);
+                tabMain.SelectedTab = tabMain.TabPages[id.ToString()];
+                _logFileaNode.ExpandAll();
+
+                AttachLogParser(key, id);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(logFiles[0]))
+                {
+                    string name = Path.GetFileName(logFiles[0]);
+
+                    Guid id = Guid.NewGuid();
+                    CreateNewNode(id.ToString(), name, 2);
+                    AttachUserControl(id.ToString(), name, 2);
+                    AttachLogParser(logFiles[0], id);
+
+                    tabMain.SelectedTab = tabMain.TabPages[id.ToString()];
+                    _logFileaNode.ExpandAll();
+
+                }
+            }
+        }
   
         private void openLogFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -127,76 +199,26 @@ namespace Indihiang.Forms
 
                 if (logFiles != null)
                 {
-                    if (logFiles.Length > 1)
-                    {
-                        GenerateConsolidateName();
-                        string key = "--"; //magic number
-                        string name1 = "Consolidation #" + _consolidationId;
-
-                        using (ConsolidateForm frm = new ConsolidateForm { ConsolidationName = name1 })
-                        {
-                            name1 = "";
-
-                            while (String.Compare(name1, "", false) == 0)
-                            {                                
-                                if (frm.ShowDialog() != DialogResult.OK)
-                                {
-                                    _consolidationId--;
-                                    return;
-                                }                                
-
-                                if (!_logFileaNode.Nodes.ContainsKey(frm.ConsolidationName))
-                                {
-                                    name1 = frm.ConsolidationName;
-
-                                    if (!frm.ConsolidationName.Equals("Consolidation #" + _consolidationId))
-                                        _consolidationId--;
-                                }
-                                else
-                                    MessageBox.Show("Log Name cannot duplicate", "Information");
-
-                            }
-                        }
-
-                        Guid id = Guid.NewGuid();
-                        TreeNode item = CreateNewNode(id.ToString(), name1, 7);
-
-                        key = "--";
-                        for (int i = 0; i < logFiles.Length; i++)
-                        {
-                            key = String.Format("{0}{1};", key,logFiles[i]);
-                            string name2 = Path.GetFileName(logFiles[i]);
-                            TreeNode childItem = item.Nodes.Add(logFiles[i], name2);
-                            childItem.ImageIndex = 2;
-                            childItem.SelectedImageIndex = 2;
-                        }
-
-                        
-                        //AttachUserControl(key, name1,7);
-                        AttachUserControl(id.ToString(), name1, 7);                                           
-                        tabMain.SelectedTab = tabMain.TabPages[id.ToString()];
-                        _logFileaNode.ExpandAll();
-
-                        AttachLogParser(key, id);    
-                    }
-                    else
-                    {
-                        if (!string.IsNullOrEmpty(logFiles[0]))
-                        {
-                            string name = Path.GetFileName(logFiles[0]);
-
-                            Guid id = Guid.NewGuid();
-                            CreateNewNode(id.ToString(), name, 2);
-                            AttachUserControl(id.ToString(), name, 2);
-                            AttachLogParser(logFiles[0], id);
-
-                            tabMain.SelectedTab = tabMain.TabPages[id.ToString()];
-                            _logFileaNode.ExpandAll();
-
-                        }
-                    }
+                    openLogFiles(logFiles);
                 }
                 
+            }
+        }
+
+        private void openLogFolderToolstripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (logFolderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
+                var folder = logFolderBrowserDialog.SelectedPath;
+                var logFiles = Directory.GetFiles(folder, "*.log", SearchOption.AllDirectories);
+                if (logFiles != null)
+                {
+                    openLogFiles(logFiles);
+                }
+                else
+                {
+                    MessageBox.Show(@"No log files found in folder : " + folder);
+                }
             }
         }
 
@@ -799,7 +821,7 @@ namespace Indihiang.Forms
 			findCountryForIPAddressesToolStripMenuItem.Checked = !findCountryForIPAddressesToolStripMenuItem.Checked;
 			Indihiang.Properties.Settings.Default.FindCountries = !Indihiang.Properties.Settings.Default.FindCountries;
 		}
-        
+
         ///////////////////////////////////////////////////
     }
 }
