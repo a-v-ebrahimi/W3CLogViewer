@@ -95,8 +95,23 @@ namespace Indihiang.Forms
         private void MainForm_Load(object sender, EventArgs e)
         {
             InitTreeMenu();
-            
+            if (Properties.Settings.Default.RecentFolder.Length > 0)
+            {
+                var recentFolderToolStripItem = new ToolStripMenuItem("Recent Folder : " +
+                                                                      Properties.Settings.Default.RecentFolder
+                );
+                fileToolStripMenuItem.DropDownItems.Insert(2, recentFolderToolStripItem);
+                recentFolderToolStripItem.Click += RecentFolderToolStripItem_Click;
+            }
         }
+
+        private void RecentFolderToolStripItem_Click(object sender, EventArgs e)
+        {
+            var folder = Properties.Settings.Default.RecentFolder;
+            var logFiles = Directory.GetFiles(folder, "*.log", SearchOption.AllDirectories);
+            openLogFiles(logFiles,true);
+        }
+
         private void InitTreeMenu()
         {
             _rootNode = new TreeNode();
@@ -119,31 +134,35 @@ namespace Indihiang.Forms
             treeMain.ExpandAll();
         }
 
-        void openLogFiles(string[] logFiles)
+        void openLogFiles(string[] logFiles, bool autoCreateConsolidation)
         {
             if (logFiles.Length > 1)
             {
                 GenerateConsolidateName();
                 string key = "--"; //magic number
                 string name1 = "Consolidation #" + _consolidationId;
+                var consolidationName = name1;
 
-                using (ConsolidateForm frm = new ConsolidateForm { ConsolidationName = name1 })
+                //using (ConsolidateForm frm = new ConsolidateForm
+                //       {
+                //           ConsolidationName = name1
+                //})
                 {
                     name1 = "";
 
                     while (String.Compare(name1, "", false) == 0)
                     {
-                        if (frm.ShowDialog() != DialogResult.OK)
-                        {
-                            _consolidationId--;
-                            return;
-                        }
+                        //if (frm.ShowDialog() != DialogResult.OK)
+                        //{
+                        //    _consolidationId--;
+                        //    return;
+                        //}
 
-                        if (!_logFileaNode.Nodes.ContainsKey(frm.ConsolidationName))
+                        if (!_logFileaNode.Nodes.ContainsKey(consolidationName))
                         {
-                            name1 = frm.ConsolidationName;
+                            name1 = consolidationName;
 
-                            if (!frm.ConsolidationName.Equals("Consolidation #" + _consolidationId))
+                            if (!consolidationName.Equals("Consolidation #" + _consolidationId))
                                 _consolidationId--;
                         }
                         else
@@ -199,7 +218,7 @@ namespace Indihiang.Forms
 
                 if (logFiles != null)
                 {
-                    openLogFiles(logFiles);
+                    openLogFiles(logFiles,true);
                 }
                 
             }
@@ -211,14 +230,9 @@ namespace Indihiang.Forms
             {
                 var folder = logFolderBrowserDialog.SelectedPath;
                 var logFiles = Directory.GetFiles(folder, "*.log", SearchOption.AllDirectories);
-                if (logFiles != null)
-                {
-                    openLogFiles(logFiles);
-                }
-                else
-                {
-                    MessageBox.Show(@"No log files found in folder : " + folder);
-                }
+                Properties.Settings.Default.RecentFolder = folder;
+                Properties.Settings.Default.Save();
+                openLogFiles(logFiles,true);
             }
         }
 
@@ -252,25 +266,25 @@ namespace Indihiang.Forms
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            DialogResult dlg = MessageBox.Show("Are you sure to exit?", 
-                                    "Confirmation", 
-                                    MessageBoxButtons.YesNo, 
-                                    MessageBoxIcon.Question);
+            //DialogResult dlg = MessageBox.Show("Are you sure to exit?", 
+            //                        "Confirmation", 
+            //                        MessageBoxButtons.YesNo, 
+            //                        MessageBoxIcon.Question);
 
-            if (dlg == DialogResult.Yes)
-            {
-                if (_listParser.Keys.Count > 0)
-                {                   
-                    foreach (KeyValuePair<string, LogParser> parser in _listParser)
-                    {
-                        if (parser.Value != null)
-                            ((LogParser)parser.Value).CancelAnalyze();
-                    }
-                    _listParser.Clear();
-                }
-            }
-            else
-                e.Cancel = true;
+            //if (dlg == DialogResult.Yes)
+            //{
+            //    if (_listParser.Keys.Count > 0)
+            //    {                   
+            //        foreach (KeyValuePair<string, LogParser> parser in _listParser)
+            //        {
+            //            if (parser.Value != null)
+            //                ((LogParser)parser.Value).CancelAnalyze();
+            //        }
+            //        _listParser.Clear();
+            //    }
+            //}
+            //else
+            //    e.Cancel = true;
         }
 
         private void toolStripOpenLogFile_Click(object sender, EventArgs e)

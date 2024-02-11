@@ -34,5 +34,17 @@ namespace Indihiang.Properties {
                 this["FindCountries"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RecentFolder {
+            get {
+                return ((string)(this["RecentFolder"]));
+            }
+            set {
+                this["RecentFolder"] = value;
+            }
+        }
     }
 }
